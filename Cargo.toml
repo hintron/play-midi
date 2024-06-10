@@ -1,0 +1,8 @@
+[package]
+name = "cp-170-midi"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+midly = "0.5.3"
