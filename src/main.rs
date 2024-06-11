@@ -7,7 +7,7 @@ use std::time::Duration;
 // External imports
 use anyhow::{bail, Result};
 use hidapi_rusb::HidApi;
-use midir::{Ignore, MidiInput, MidiOutput, MidiOutputPort};
+use midir::{Ignore, MidiInput, MidiOutput, MidiOutputConnection, MidiOutputPort};
 use midly::{num, MetaMessage, Smf, TrackEventKind};
 use rusb;
 
@@ -28,7 +28,8 @@ fn main() -> Result<()> {
     print_meta(file)?;
     show_usb_devices()?;
     list_midi_ports()?;
-    test_play()?;
+    let usb_midi_out = open_midi_usb()?;
+    test_play(usb_midi_out)?;
     // send_midi_to_usb(file)?;
     Ok(())
 }
@@ -155,7 +156,7 @@ fn list_midi_ports() -> Result<()> {
 }
 
 // Adapted from https://github.com/Boddlnagg/midir/blob/master/examples/test_play.rs
-fn test_play() -> Result<()> {
+fn open_midi_usb() -> Result<MidiOutputConnection> {
     let midi_out = MidiOutput::new("My Test Output")?;
 
     // Get an output port (read from console if multiple are available)
@@ -182,10 +183,12 @@ fn test_play() -> Result<()> {
             &out_ports[port_index]
         }
     };
-
     println!("Opening connection");
-    let mut conn_out = midi_out.connect(out_port, "midir-test")?;
-    println!("Connection open. Listen!");
+    let conn_out = midi_out.connect(out_port, "midir-test")?;
+    Ok(conn_out)
+}
+
+fn test_play(mut conn_out: MidiOutputConnection) -> Result<()> {
     {
         // Define a new scope in which the closure `play_note` borrows conn_out, so it can be called easily
         let mut play_note = |note: u8, duration: u64| {
@@ -193,12 +196,14 @@ fn test_play() -> Result<()> {
             const NOTE_OFF_MSG: u8 = 0x80;
             const VELOCITY: u8 = 0x64;
             // We're ignoring errors in here
+            println!("Playing note {note}");
             let _ = conn_out.send(&[NOTE_ON_MSG, note, VELOCITY]);
             sleep(Duration::from_millis(duration * 150));
             let _ = conn_out.send(&[NOTE_OFF_MSG, note, VELOCITY]);
         };
 
         sleep(Duration::from_millis(4 * 150));
+        println!("Playing test song...");
 
         play_note(66, 4);
         play_note(65, 3);
