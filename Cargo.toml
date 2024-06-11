@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
+hidapi-rusb = "1.3.3"
 midly = "0.5.3"
