@@ -21,6 +21,7 @@ dependencies = [
  "anyhow",
  "hidapi-rusb",
  "midly",
+ "rusb",
 ]
 
 [[package]]

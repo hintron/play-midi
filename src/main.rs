@@ -1,13 +1,15 @@
 // Standard library imports
 use std::env;
 use std::fs;
+use std::time::Duration;
 // use std::fs::OpenOptions;
 // use std::io::Write;
 
 // External imports
-use anyhow::Result;
+use anyhow::{bail, Result};
 use hidapi_rusb::HidApi;
 use midly::{num, MetaMessage, Smf, TrackEventKind};
+use rusb;
 
 // Internal imports
 
@@ -24,20 +26,53 @@ fn main() -> Result<()> {
     let file = &args[1];
 
     print_meta(file)?;
-    send_midi_file(file)?;
+    show_usb_devices()?;
+    send_midi_to_usb(file)?;
+    Ok(())
+}
+
+fn send_midi_to_usb(file: &str) -> Result<()> {
+    let (vid, pid) = (0xFC02, 0x0101);
+    let handle = match rusb::open_device_with_vid_pid(vid, pid) {
+        Some(handle) => handle,
+        None => bail!(
+            "Could not get device handle for USB MIDI interface with vid={vid:04X} pid={pid:04X}"
+        ),
+    };
+
+    // Write data to device
+    let bytes = fs::read(file)?;
+    println!("Writing to USB MIDI...");
+    let written = handle.write_bulk(0x0, &bytes[..], Duration::from_secs(1))?;
+    println!("Wrote: {:?} bytes to {}", written, file);
+    Ok(())
+}
+
+fn show_usb_devices() -> Result<()> {
+    let devices = rusb::devices()?;
+    for device in devices.iter() {
+        let device_desc = device.device_descriptor()?;
+        let vid = device_desc.vendor_id();
+        let pid = device_desc.product_id();
+        println!(
+            "Bus {:03} Device {:03} ID {:04x}:{:04x}",
+            device.bus_number(),
+            device.address(),
+            vid,
+            pid
+        );
+    }
     Ok(())
 }
 
 /// Send the contents of a midi file to a USB midi interface
-fn send_midi_file(file: &str) -> Result<()> {
+fn _send_midi_file(file: &str) -> Result<()> {
     // Get the USB Midi interface
     let api = HidApi::new().unwrap();
     // Print out information about all connected devices
     for device in api.device_list() {
         println!("{:#X?}", device);
     }
-
-    println!("Got here");
 
     // Connect to device using its VID and PID
     // For now, hard code to IDs for my "USB MIDI Cable"
