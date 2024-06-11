@@ -1,13 +1,13 @@
 // Standard library imports
 use std::env;
 use std::fs;
+use std::thread::sleep;
 use std::time::Duration;
-// use std::fs::OpenOptions;
-// use std::io::Write;
 
 // External imports
 use anyhow::{bail, Result};
 use hidapi_rusb::HidApi;
+use midir::{Ignore, MidiInput, MidiOutput, MidiOutputPort};
 use midly::{num, MetaMessage, Smf, TrackEventKind};
 use rusb;
 
@@ -27,11 +27,13 @@ fn main() -> Result<()> {
 
     print_meta(file)?;
     show_usb_devices()?;
-    send_midi_to_usb(file)?;
+    list_midi_ports()?;
+    test_play()?;
+    // send_midi_to_usb(file)?;
     Ok(())
 }
 
-fn send_midi_to_usb(file: &str) -> Result<()> {
+fn _send_midi_to_usb(file: &str) -> Result<()> {
     let (vid, pid) = (0xFC02, 0x0101);
     let handle = match rusb::open_device_with_vid_pid(vid, pid) {
         Some(handle) => handle,
@@ -79,11 +81,6 @@ fn _send_midi_file(file: &str) -> Result<()> {
     // let (vid, pid) = (0x46D, 0xC02C);
     let (vid, pid) = (0xFC02, 0x0101);
     let device = api.open(vid, pid)?;
-
-    // // Read data from device
-    // let mut buf = [0u8; 8];
-    // let res = device.read(&mut buf[..])?;
-    // println!("Read: {:?}", &buf[..res]);
 
     // Write data to device
     let bytes = fs::read(file)?;
@@ -136,5 +133,86 @@ fn print_meta(file: &str) -> Result<()> {
         }
     }
 
+    Ok(())
+}
+
+fn list_midi_ports() -> Result<()> {
+    let mut midi_in = MidiInput::new("midir test input")?;
+    midi_in.ignore(Ignore::None);
+    let midi_out = MidiOutput::new("midir test output")?;
+
+    println!("Available input ports:");
+    for (i, p) in midi_in.ports().iter().enumerate() {
+        println!("{}: {}", i, midi_in.port_name(p)?);
+    }
+
+    println!("Available output ports:");
+    for (i, p) in midi_out.ports().iter().enumerate() {
+        println!("{}: {}", i, midi_out.port_name(p)?);
+    }
+
+    Ok(())
+}
+
+// Adapted from https://github.com/Boddlnagg/midir/blob/master/examples/test_play.rs
+fn test_play() -> Result<()> {
+    let midi_out = MidiOutput::new("My Test Output")?;
+
+    // Get an output port (read from console if multiple are available)
+    let out_ports = midi_out.ports();
+    let out_port: &MidiOutputPort = match out_ports.len() {
+        0 => bail!("no output port found"),
+        1 => {
+            println!(
+                "Choosing the only available output port: {}",
+                midi_out.port_name(&out_ports[0]).unwrap()
+            );
+            &out_ports[0]
+        }
+        _ => {
+            println!("Selecting USB MIDI output ports:");
+            let mut port_index = 0;
+            for (i, p) in out_ports.iter().enumerate() {
+                let port_name = midi_out.port_name(p).unwrap();
+                if port_name.contains("USB MIDI Interface") {
+                    println!("Found USB MIDI Interface!");
+                    port_index = i;
+                }
+            }
+            &out_ports[port_index]
+        }
+    };
+
+    println!("Opening connection");
+    let mut conn_out = midi_out.connect(out_port, "midir-test")?;
+    println!("Connection open. Listen!");
+    {
+        // Define a new scope in which the closure `play_note` borrows conn_out, so it can be called easily
+        let mut play_note = |note: u8, duration: u64| {
+            const NOTE_ON_MSG: u8 = 0x90;
+            const NOTE_OFF_MSG: u8 = 0x80;
+            const VELOCITY: u8 = 0x64;
+            // We're ignoring errors in here
+            let _ = conn_out.send(&[NOTE_ON_MSG, note, VELOCITY]);
+            sleep(Duration::from_millis(duration * 150));
+            let _ = conn_out.send(&[NOTE_OFF_MSG, note, VELOCITY]);
+        };
+
+        sleep(Duration::from_millis(4 * 150));
+
+        play_note(66, 4);
+        play_note(65, 3);
+        play_note(63, 1);
+        play_note(61, 6);
+        play_note(59, 2);
+        play_note(58, 4);
+        play_note(56, 4);
+        play_note(54, 4);
+    }
+    sleep(Duration::from_millis(150));
+    println!("Closing connection");
+    // This is optional, the connection would automatically be closed as soon as it goes out of scope
+    conn_out.close();
+    println!("Connection closed");
     Ok(())
 }
