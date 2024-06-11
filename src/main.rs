@@ -22,6 +22,12 @@ fn main() -> Result<()> {
     let _executable = &args[0];
     let file = &args[1];
 
+    print_meta(file)
+}
+
+/// Print out the meta data of a midi file and their tick timestamp while
+/// ignoring most of the data.
+fn print_meta(file: &str) -> Result<()> {
     let bytes = fs::read(file)?;
     let smf = Smf::parse(&bytes).unwrap();
 
