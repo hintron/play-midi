@@ -8,6 +8,7 @@ use std::time::Duration;
 use anyhow::{bail, Result};
 use hidapi_rusb::HidApi;
 use midir::{Ignore, MidiInput, MidiOutput, MidiOutputConnection, MidiOutputPort};
+use midly::SmfBytemap;
 use midly::{num, MetaMessage, Smf, TrackEventKind};
 use rusb;
 
@@ -28,9 +29,9 @@ fn main() -> Result<()> {
     print_meta(file)?;
     show_usb_devices()?;
     list_midi_ports()?;
-    let usb_midi_out = open_midi_usb()?;
-    test_play(usb_midi_out)?;
-    // send_midi_to_usb(file)?;
+    let mut usb_midi_out = open_midi_usb()?;
+    test_play(&mut usb_midi_out)?;
+    play_midi_file(&mut usb_midi_out, file)?;
     Ok(())
 }
 
@@ -188,7 +189,7 @@ fn open_midi_usb() -> Result<MidiOutputConnection> {
     Ok(conn_out)
 }
 
-fn test_play(mut conn_out: MidiOutputConnection) -> Result<()> {
+fn test_play(conn_out: &mut MidiOutputConnection) -> Result<()> {
     {
         // Define a new scope in which the closure `play_note` borrows conn_out, so it can be called easily
         let mut play_note = |note: u8, duration: u64| {
@@ -215,9 +216,52 @@ fn test_play(mut conn_out: MidiOutputConnection) -> Result<()> {
         play_note(54, 4);
     }
     sleep(Duration::from_millis(150));
-    println!("Closing connection");
-    // This is optional, the connection would automatically be closed as soon as it goes out of scope
-    conn_out.close();
-    println!("Connection closed");
+    Ok(())
+}
+
+fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()> {
+    // Write data to device
+    let bytes = fs::read(file)?;
+    let smf = SmfBytemap::parse(&bytes)?;
+
+    let mut ticks: u32 = 0;
+    println!("header: {:?}", smf.header);
+
+    let mut ms_per_tick: u32 = 0;
+    let ticks_per_beat = match smf.header.timing {
+        midly::Timing::Metrical(ticks_per_beat) => ticks_per_beat.as_int() as u32,
+        midly::Timing::Timecode(_, _) => {
+            unimplemented!();
+        }
+    };
+
+    println!("ticks_per_beat: {ticks_per_beat}");
+
+    for (i, track) in smf.tracks.iter().enumerate() {
+        println!("track {} has {} events", i, track.len());
+        for (bytes, event) in track {
+            let delta_ticks = event.delta.as_int();
+            if delta_ticks > 0 {
+                assert!(ms_per_tick > 0);
+                let ms = (delta_ticks as u64) * (ms_per_tick as u64);
+                sleep(Duration::from_millis(ms));
+                println!("{ticks}: Sleeping for {ms} ms");
+            }
+            ticks += delta_ticks;
+            match event.kind {
+                TrackEventKind::Meta(MetaMessage::Tempo(us_per_beat)) => {
+                    // Tempo is changing - change ms per tick
+                    // ms_per_tick = (us/beat) * (1ms/1000us) / (tick/beat)
+                    ms_per_tick = us_per_beat.as_int() / 1000 / ticks_per_beat;
+                    println!("ms_per_tick = {ms_per_tick}");
+                }
+                _ => {}
+            }
+            // println!("{ticks} ({delta_ticks}): Sending {} bytes", bytes.len());
+            // Transmit the MIDI bytes to the USB MIDI Interface
+            let _ = conn_out.send(bytes)?;
+        }
+    }
+
     Ok(())
 }
