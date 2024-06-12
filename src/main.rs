@@ -227,9 +227,9 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
     let mut ticks: u32 = 0;
     println!("header: {:?}", smf.header);
 
-    let mut ms_per_tick: u32 = 0;
+    let mut us_per_tick: u64 = 0;
     let ticks_per_beat = match smf.header.timing {
-        midly::Timing::Metrical(ticks_per_beat) => ticks_per_beat.as_int() as u32,
+        midly::Timing::Metrical(ticks_per_beat) => ticks_per_beat.as_int() as u64,
         midly::Timing::Timecode(_, _) => {
             unimplemented!();
         }
@@ -242,18 +242,18 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
         for (bytes, event) in track {
             let delta_ticks = event.delta.as_int();
             if delta_ticks > 0 {
-                assert!(ms_per_tick > 0);
-                let ms = (delta_ticks as u64) * (ms_per_tick as u64);
-                sleep(Duration::from_millis(ms));
-                println!("{ticks}: Sleeping for {ms} ms");
+                assert!(us_per_tick > 0);
+                let us = (delta_ticks as u64) * us_per_tick;
+                sleep(Duration::from_micros(us));
+                println!("{ticks}: Sleeping for {us} us");
             }
             ticks += delta_ticks;
             match event.kind {
                 TrackEventKind::Meta(MetaMessage::Tempo(us_per_beat)) => {
-                    // Tempo is changing - change ms per tick
-                    // ms_per_tick = (us/beat) * (1ms/1000us) / (tick/beat)
-                    ms_per_tick = us_per_beat.as_int() / 1000 / ticks_per_beat;
-                    println!("ms_per_tick = {ms_per_tick}");
+                    // Change the tempo
+                    // us_per_tick = (us/beat) / (tick/beat)
+                    us_per_tick = us_per_beat.as_int() as u64 / ticks_per_beat;
+                    println!("us_per_tick = {us_per_tick}");
                 }
                 _ => {}
             }
