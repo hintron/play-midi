@@ -6,7 +6,6 @@ use std::time::Duration;
 
 // External imports
 use anyhow::{bail, Result};
-use hidapi_rusb::HidApi;
 use midir::{Ignore, MidiInput, MidiOutput, MidiOutputConnection, MidiOutputPort};
 use midly::SmfBytemap;
 use midly::{num, MetaMessage, Smf, TrackEventKind};
@@ -35,23 +34,6 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn _send_midi_to_usb(file: &str) -> Result<()> {
-    let (vid, pid) = (0xFC02, 0x0101);
-    let handle = match rusb::open_device_with_vid_pid(vid, pid) {
-        Some(handle) => handle,
-        None => bail!(
-            "Could not get device handle for USB MIDI interface with vid={vid:04X} pid={pid:04X}"
-        ),
-    };
-
-    // Write data to device
-    let bytes = fs::read(file)?;
-    println!("Writing to USB MIDI...");
-    let written = handle.write_bulk(0x0, &bytes[..], Duration::from_secs(1))?;
-    println!("Wrote: {:?} bytes to {}", written, file);
-    Ok(())
-}
-
 fn show_usb_devices() -> Result<()> {
     let devices = rusb::devices()?;
     for device in devices.iter() {
@@ -66,28 +48,6 @@ fn show_usb_devices() -> Result<()> {
             pid
         );
     }
-    Ok(())
-}
-
-/// Send the contents of a midi file to a USB midi interface
-fn _send_midi_file(file: &str) -> Result<()> {
-    // Get the USB Midi interface
-    let api = HidApi::new().unwrap();
-    // Print out information about all connected devices
-    for device in api.device_list() {
-        println!("{:#X?}", device);
-    }
-
-    // Connect to device using its VID and PID
-    // For now, hard code to IDs for my "USB MIDI Cable"
-    // let (vid, pid) = (0x46D, 0xC02C);
-    let (vid, pid) = (0xFC02, 0x0101);
-    let device = api.open(vid, pid)?;
-
-    // Write data to device
-    let bytes = fs::read(file)?;
-    let res = device.write(&bytes[..])?;
-    println!("Wrote: {:?} bytes to {}", res, file);
     Ok(())
 }
 
