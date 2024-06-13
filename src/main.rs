@@ -53,6 +53,7 @@ fn show_usb_devices() -> Result<()> {
 /// ignoring most of the data.
 fn print_meta(file: &str) -> Result<()> {
     let bytes = fs::read(file)?;
+    println!("File size: {:.3} kb", (bytes.len() as f64) / 1024.0);
     let smf = Smf::parse(&bytes).unwrap();
 
     let mut ticks: num::u28 = num::u28::new(0);
