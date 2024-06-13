@@ -92,10 +92,26 @@ write a Rust program to print out the header and various meta events. It's easy
 to use and is also the fastest Rust MIDI parsing crate.
 
 
+# Other work
+
+This repo is currently under development for my personal use. Also check out
+these MIDI-related Rust crates:
+
+* [Nodi][nodi]
+  * [MIDNOTE][midnote]
+  * [plmidi][plmidi]
+* [midly][midly]
+* [midir][midir]
+* https://github.com/sinshu/rustysynth
+* https://github.com/Ruin0x11/midplay
+
 [cp170-manual]: https://kawaius.com/wp-content/uploads/2019/04/Kawai-CP180-CP170-CP150-Digital-Piano-Manual.pdf
 [kawai-manuals]: https://kawaius.com/ensemble-pianos-owners-manuals/
 [midly]: https://github.com/kovaxis/midly
 [midir]: https://github.com/Boddlnagg/midir
+[nodi]: https://github.com/insomnimus/nodi
+[midnote]: https://github.com/insomnimus/midnote
+[plmidi]: https://github.com/insomnimus/plmidi
 [usb-midi-interface-amazon]: https://www.amazon.com/dp/B07L8KFYBK
 [garageband]: https://www.apple.com/mac/garageband/
 [logic-pro]: https://www.apple.com/logic-pro/
