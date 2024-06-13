@@ -23,3 +23,8 @@
 * Add a side channel of midi notes from various sensors attached to a raspberry
   pi with IO pins.
 * Extract MIDI files from GarageBand loop files.
+* Create a tool to automatically determine average velocity or volume rating of
+  a song
+* Create a tool to normalize MIDI files to be a similar volume.
+  * E.g. 24.mid is super loud, while Sea of Thieves/wellerman MIDI files are too
+    quiet.
