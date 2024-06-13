@@ -7,15 +7,12 @@ use std::time::Duration;
 // External imports
 use anyhow::{bail, Result};
 use midir::{Ignore, MidiInput, MidiOutput, MidiOutputConnection, MidiOutputPort};
-use midly::SmfBytemap;
-use midly::{num, MetaMessage, Smf, TrackEventKind};
+use midly::{num, MetaMessage, Smf, SmfBytemap, TrackEventKind};
 use rusb;
 
 // Internal imports
 
 fn main() -> Result<()> {
-    println!("Hello, world!");
-
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
@@ -25,23 +22,24 @@ fn main() -> Result<()> {
     let _executable = &args[0];
     let file = &args[1];
 
-    print_meta(file)?;
     show_usb_devices()?;
     list_midi_ports()?;
     let mut usb_midi_out = open_midi_usb()?;
     test_play(&mut usb_midi_out)?;
+    print_meta(file)?;
     play_midi_file(&mut usb_midi_out, file)?;
     Ok(())
 }
 
 fn show_usb_devices() -> Result<()> {
     let devices = rusb::devices()?;
+    println!("USB Devices:");
     for device in devices.iter() {
         let device_desc = device.device_descriptor()?;
         let vid = device_desc.vendor_id();
         let pid = device_desc.product_id();
         println!(
-            "Bus {:03} Device {:03} ID {:04x}:{:04x}",
+            "  * Bus {:03} Device {:03} ID {:04x}:{:04x}",
             device.bus_number(),
             device.address(),
             vid,
@@ -103,14 +101,14 @@ fn list_midi_ports() -> Result<()> {
     midi_in.ignore(Ignore::None);
     let midi_out = MidiOutput::new("midir test output")?;
 
-    println!("Available input ports:");
+    println!("Available MIDI input ports:");
     for (i, p) in midi_in.ports().iter().enumerate() {
-        println!("{}: {}", i, midi_in.port_name(p)?);
+        println!("  * {}: {}", i, midi_in.port_name(p)?);
     }
 
-    println!("Available output ports:");
+    println!("Available MIDI output ports:");
     for (i, p) in midi_out.ports().iter().enumerate() {
-        println!("{}: {}", i, midi_out.port_name(p)?);
+        println!("  * {}: {}", i, midi_out.port_name(p)?);
     }
 
     Ok(())
