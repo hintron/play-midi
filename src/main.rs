@@ -259,11 +259,21 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
                     // Change the tempo
                     // us_per_tick = (us/beat) / (tick/beat)
                     us_per_tick = us_per_beat.as_int() as u64 / ticks_per_beat;
-                    println!("us_per_tick = {us_per_tick}");
+                    // println!("us_per_tick = {us_per_tick}");
                     continue;
                 }
-                TrackEventKind::Meta(e) => {
-                    println!("Skipping sending meta event: {e:?}");
+                TrackEventKind::Meta(MetaMessage::Lyric(bytes)) => {
+                    let lyric = std::str::from_utf8(bytes)?;
+                    println!("LYRIC: {lyric}");
+                    continue;
+                }
+                TrackEventKind::Meta(MetaMessage::TrackName(bytes)) => {
+                    let track_name = std::str::from_utf8(bytes)?;
+                    println!("TRACK NAME: {track_name}");
+                    continue;
+                }
+                TrackEventKind::Meta(_e) => {
+                    // println!("Skipping sending meta event: {e:?}");
                     continue;
                 }
                 _ => {}
