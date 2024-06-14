@@ -237,9 +237,14 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
                 }
                 _ => {}
             }
-            // println!("{ticks} ({delta_ticks}): Sending {} bytes", bytes.len());
             // Transmit the MIDI bytes to the USB MIDI Interface
-            let _ = conn_out.send(bytes)?;
+            match conn_out.send(bytes) {
+                Err(e) => bail!(
+                    "Tick {ticks}: Failed to send event: {event:?} (byte len: {}): {e}",
+                    bytes.len()
+                ),
+                _ => {}
+            };
         }
     }
 
