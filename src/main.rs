@@ -11,6 +11,8 @@ use midly::{num, MetaMessage, Smf, SmfBytemap, TrackEventKind};
 use rusb;
 
 // Internal imports
+pub mod input_loop;
+use input_loop::input_sleep_loop;
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -241,7 +243,9 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
                 // Only sleep if needed
                 if elapsed < us {
                     us -= elapsed;
-                    sleep(Duration::from_micros(us));
+                    // Sleep while also checking for any input
+                    input_sleep_loop(us);
+
                     // Reset start
                     start = Instant::now();
                     // Print after the sleep, so we don't mess with timing
