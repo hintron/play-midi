@@ -99,10 +99,12 @@ fn print_meta(file: &str) -> Result<()> {
             }
         }
         println!("Lyric meta event count: {lyric_count}");
-        // Remove carriage return so we don't overwrite ourselves when printing out
-        // the lyrics as a string.
-        let lyrics_clean = lyrics.replace("\r", "");
-        println!("\n{track_name}\nLyrics:\n\n{lyrics_clean}\n\n");
+        if lyric_count > 0 {
+            // Remove carriage return so we don't overwrite ourselves when printing out
+            // the lyrics as a string.
+            let lyrics_clean = lyrics.replace("\r", "");
+            println!("\n{track_name}\nLyrics:\n\n{lyrics_clean}\n\n");
+        }
     }
 
     Ok(())
