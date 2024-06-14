@@ -2,7 +2,7 @@
 use std::env;
 use std::fs;
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 // External imports
 use anyhow::{bail, Result};
@@ -229,13 +229,24 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
 
     for (i, track) in smf.tracks.iter().enumerate() {
         println!("track {} has {} events", i, track.len());
+        let mut start = Instant::now();
         for (bytes, event) in track {
             let delta_ticks = event.delta.as_int();
             if delta_ticks > 0 {
                 assert!(us_per_tick > 0);
-                let us = (delta_ticks as u64) * us_per_tick;
-                sleep(Duration::from_micros(us));
-                println!("{ticks}: Sleeping for {us} us");
+                let mut us = (delta_ticks as u64) * us_per_tick;
+                // Some amount of time already elapsed sending the last command.
+                // Account for that here.
+                let elapsed = start.elapsed().as_micros() as u64;
+                // Only sleep if needed
+                if elapsed < us {
+                    us -= elapsed;
+                    sleep(Duration::from_micros(us));
+                    // Reset start
+                    start = Instant::now();
+                    // Print after the sleep, so we don't mess with timing
+                    // println!("{ticks}: Sleeping for {us} us");
+                }
             }
             ticks += delta_ticks;
 
