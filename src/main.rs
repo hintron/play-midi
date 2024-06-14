@@ -167,11 +167,16 @@ fn play_note(conn_out: &mut MidiOutputConnection, note: u8, duration: u64) {
     const NOTE_ON_MSG: u8 = 0x90;
     const NOTE_OFF_MSG: u8 = 0x80;
     const VELOCITY: u8 = 0x64;
-    // We're ignoring errors in here
     println!("Playing note {note}");
-    let _ = conn_out.send(&[NOTE_ON_MSG, note, VELOCITY]);
+    match conn_out.send(&[NOTE_ON_MSG, note, VELOCITY]) {
+        Err(e) => println!("ERROR: {e}"),
+        _ => {}
+    }
     sleep(Duration::from_millis(duration * 150));
-    let _ = conn_out.send(&[NOTE_OFF_MSG, note, VELOCITY]);
+    match conn_out.send(&[NOTE_OFF_MSG, note, VELOCITY]) {
+        Err(e) => println!("ERROR: {e}"),
+        _ => {}
+    }
 }
 
 fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()> {
