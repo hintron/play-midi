@@ -174,30 +174,33 @@ fn test_play(conn_out: &mut MidiOutputConnection) -> Result<()> {
     Ok(())
 }
 
+/// Play a note for a duration.
+/// running status doesn't seem to work well for my piano, so comment it out for
+/// now.
 fn play_note(conn_out: &mut MidiOutputConnection, note: u8, duration: u64) {
     const NOTE_ON_MSG: u8 = 0x90;
     const NOTE_OFF_MSG: u8 = 0x80;
     const VELOCITY: u8 = 0x64;
     println!("Playing note {note}");
-    let third = note.wrapping_add(2);
+    // let third = note.wrapping_add(2);
     match conn_out.send(&[NOTE_ON_MSG, note, VELOCITY]) {
         Err(e) => println!("ERROR: Failed to send NOTE ON message: {e}"),
         _ => {}
     }
-    // Play a third note above, using the "running status"
-    match conn_out.send(&[third, VELOCITY]) {
-        Err(e) => println!("ERROR: Failed to send NOTE ON message for third: {e}"),
-        _ => {}
-    }
+    // // Play a third note above, using the "running status"
+    // match conn_out.send(&[third, VELOCITY]) {
+    //     Err(e) => println!("ERROR: Failed to send NOTE ON message for third: {e}"),
+    //     _ => {}
+    // }
     sleep(Duration::from_millis(duration * 150));
     match conn_out.send(&[NOTE_OFF_MSG, note, VELOCITY]) {
         Err(e) => println!("ERROR: Failed to send NOTE OFF message: {e}"),
         _ => {}
     }
-    match conn_out.send(&[third, VELOCITY]) {
-        Err(e) => println!("ERROR: Failed to send NOTE OFF message for third: {e}"),
-        _ => {}
-    }
+    // match conn_out.send(&[third, VELOCITY]) {
+    //     Err(e) => println!("ERROR: Failed to send NOTE OFF message for third: {e}"),
+    //     _ => {}
+    // }
 }
 
 fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()> {
