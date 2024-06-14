@@ -170,21 +170,21 @@ fn play_note(conn_out: &mut MidiOutputConnection, note: u8, duration: u64) {
     println!("Playing note {note}");
     let third = note.wrapping_add(2);
     match conn_out.send(&[NOTE_ON_MSG, note, VELOCITY]) {
-        Err(e) => println!("ERROR: {e}"),
+        Err(e) => println!("ERROR: Failed to send NOTE ON message: {e}"),
         _ => {}
     }
     // Play a third note above, using the "running status"
     match conn_out.send(&[third, VELOCITY]) {
-        Err(e) => println!("ERROR: {e}"),
+        Err(e) => println!("ERROR: Failed to send NOTE ON message for third: {e}"),
         _ => {}
     }
     sleep(Duration::from_millis(duration * 150));
     match conn_out.send(&[NOTE_OFF_MSG, note, VELOCITY]) {
-        Err(e) => println!("ERROR: {e}"),
+        Err(e) => println!("ERROR: Failed to send NOTE OFF message: {e}"),
         _ => {}
     }
     match conn_out.send(&[third, VELOCITY]) {
-        Err(e) => println!("ERROR: {e}"),
+        Err(e) => println!("ERROR: Failed to send NOTE OFF message for third: {e}"),
         _ => {}
     }
 }
