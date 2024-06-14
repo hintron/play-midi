@@ -60,6 +60,9 @@ fn print_meta(file: &str) -> Result<()> {
     println!("header: {:?}", smf.header);
     for (i, track) in smf.tracks.iter().enumerate() {
         println!("track {} has {} events", i, track.len());
+        let mut lyrics = String::new();
+        let mut track_name = String::new();
+        let mut lyric_count = 0;
         for event in track {
             ticks += event.delta;
             match event.kind {
@@ -69,11 +72,14 @@ fn print_meta(file: &str) -> Result<()> {
                 TrackEventKind::Meta(MetaMessage::Text(string)) => {
                     println!("{ticks}: Meta:Text: {}", std::str::from_utf8(string)?)
                 }
-                TrackEventKind::Meta(MetaMessage::Lyric(..)) => {
-                    // println!("{ticks}: Meta:Lyric: {}", std::str::from_utf8(string)?)
+                TrackEventKind::Meta(MetaMessage::Lyric(lyric)) => {
+                    lyrics += std::str::from_utf8(lyric)?;
+                    lyric_count += 1;
                 }
                 TrackEventKind::Meta(MetaMessage::TrackName(string)) => {
-                    println!("{ticks}: Meta:TrackName: {}", std::str::from_utf8(string)?)
+                    let tmp = std::str::from_utf8(string)?;
+                    track_name += tmp;
+                    println!("{ticks}: Meta:TrackName: {tmp}")
                 }
                 TrackEventKind::Meta(MetaMessage::Copyright(string)) => {
                     println!("{ticks}: Meta:Copyright: {}", std::str::from_utf8(string)?)
@@ -92,6 +98,11 @@ fn print_meta(file: &str) -> Result<()> {
                 }
             }
         }
+        println!("Lyric meta event count: {lyric_count}");
+        // Remove carriage return so we don't overwrite ourselves when printing out
+        // the lyrics as a string.
+        let lyrics_clean = lyrics.replace("\r", "");
+        println!("\n{track_name}\nLyrics:\n\n{lyrics_clean}\n\n");
     }
 
     Ok(())
