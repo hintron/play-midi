@@ -218,12 +218,22 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
                 println!("{ticks}: Sleeping for {us} us");
             }
             ticks += delta_ticks;
+
+            // We don't want to send meta events to the external instrument,
+            // since it fails on Windows and because it's probably pointless
+            // anyways, as an external instrument probably doesn't do anything
+            // with them.
             match event.kind {
                 TrackEventKind::Meta(MetaMessage::Tempo(us_per_beat)) => {
                     // Change the tempo
                     // us_per_tick = (us/beat) / (tick/beat)
                     us_per_tick = us_per_beat.as_int() as u64 / ticks_per_beat;
                     println!("us_per_tick = {us_per_tick}");
+                    continue;
+                }
+                TrackEventKind::Meta(e) => {
+                    println!("Skipping sending meta event: {e:?}");
+                    continue;
                 }
                 _ => {}
             }
