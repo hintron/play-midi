@@ -1,6 +1,9 @@
 # TODO
 
 ## Tasks
+* Support parallel songs (24.mid).
+* Account for how long it takes to play a note or send a command and compensate
+  for that when sleeping between commands.
 * Improve commandline arg infrastructure.
 * Send NOTE OFF commands for all notes on all channels before starting song,
   in case things were in a bad state.
@@ -28,3 +31,5 @@
 * Create a tool to normalize MIDI files to be a similar volume.
   * E.g. 24.mid is super loud, while Sea of Thieves/wellerman MIDI files are too
     quiet.
+
+## Completed
