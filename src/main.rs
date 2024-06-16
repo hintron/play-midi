@@ -248,6 +248,10 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
         println!("track {} has {} events", i, track.len());
         let mut start = Instant::now();
         for (bytes, event) in track {
+            if !is_running.load(Ordering::SeqCst) {
+                exit_playback(conn_out);
+            }
+
             let delta_ticks = event.delta.as_int();
             if delta_ticks > 0 {
                 assert!(us_per_tick > 0);
@@ -259,7 +263,7 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
                 if elapsed < us {
                     us -= elapsed;
                     // Sleep while also checking for any input
-                    input_sleep_loop(us, is_running.clone());
+                    input_sleep_loop(us);
 
                     // Reset start
                     start = Instant::now();
@@ -309,4 +313,24 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
     }
 
     Ok(())
+}
+fn exit_playback(conn_out: &mut MidiOutputConnection) {
+    println!();
+    send_all_notes_off(conn_out);
+    println!("Exiting playback early");
+    std::process::exit(0);
+}
+
+fn send_all_notes_off(conn_out: &mut MidiOutputConnection) {
+    println!("ALL NOTES OFF");
+    const ALL_NOTES_OFF_CTRL_NUM: u8 = 0x7B;
+    const ALL_NOTES_OFF: u8 = 0x0;
+
+    for control_change in 0xB0..0xBF {
+        let msg = [control_change, ALL_NOTES_OFF_CTRL_NUM, ALL_NOTES_OFF];
+        match conn_out.send(&msg[..]) {
+            Err(e) => println!("ERROR: {e}"),
+            _ => {}
+        }
+    }
 }

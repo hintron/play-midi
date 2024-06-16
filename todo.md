@@ -7,7 +7,6 @@
 * Improve commandline arg infrastructure.
 * Send NOTE OFF commands for all notes on all channels before starting song,
   in case things were in a bad state.
-* Handle ctrl-C so that it sends NOTE OFF commands before exiting.
 * Specify a custom string to look for when getting the USB MIDI interface.
 * Figure out why harpsicord in Warcraft is being played as a piano on the CP-170
   when played through the program, but is a harpsicord when played via floppy.
@@ -33,3 +32,4 @@
     quiet.
 
 ## Completed
+* Handle ctrl-C so that it sends NOTE OFF commands before exiting.
