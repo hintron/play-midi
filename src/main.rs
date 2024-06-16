@@ -227,6 +227,9 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
     // synthesizers recieving MIDI data over a cable so that they don't hold a
     // note forever.
 
+    // Send all notes off msg, in case things are in a weird state
+    send_all_notes_off(conn_out);
+
     // Write data to device
     let bytes = fs::read(file)?;
     let smf = SmfBytemap::parse(&bytes)?;

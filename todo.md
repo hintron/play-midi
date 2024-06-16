@@ -3,8 +3,6 @@
 ## Tasks
 * Support parallel songs (24.mid).
 * Improve commandline arg infrastructure.
-* Send NOTE OFF commands for all notes on all channels before starting song,
-  in case things were in a bad state.
 * Specify a custom string to look for when getting the USB MIDI interface.
 * Figure out why harpsicord in Warcraft is being played as a piano on the CP-170
   when played through the program, but is a harpsicord when played via floppy.
@@ -33,3 +31,5 @@
 * Account for how long it takes to play a note or send a command and compensate
   for that when sleeping between commands.
 * Handle ctrl-C so that it sends NOTE OFF commands before exiting.
+* Send NOTE OFF commands for all notes on all channels before starting song,
+  in case things were in a bad state.
