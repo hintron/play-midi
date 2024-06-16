@@ -1,6 +1,8 @@
 // Standard library imports
 use std::env;
 use std::fs;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
@@ -212,6 +214,19 @@ fn play_note(conn_out: &mut MidiOutputConnection, note: u8, duration: u64) {
 }
 
 fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()> {
+    // Set ctrl-C handler to send the "all notes OFF" command on exit
+    let is_running = Arc::new(AtomicBool::new(true));
+    let r = is_running.clone();
+
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+    // Now we can check `is_running` to see if the user requests a quit so we
+    // can send an ALL NOTES OFF message. This is important for real-world
+    // synthesizers recieving MIDI data over a cable so that they don't hold a
+    // note forever.
+
     // Write data to device
     let bytes = fs::read(file)?;
     let smf = SmfBytemap::parse(&bytes)?;
@@ -244,7 +259,7 @@ fn play_midi_file(conn_out: &mut MidiOutputConnection, file: &str) -> Result<()>
                 if elapsed < us {
                     us -= elapsed;
                     // Sleep while also checking for any input
-                    input_sleep_loop(us);
+                    input_sleep_loop(us, is_running.clone());
 
                     // Reset start
                     start = Instant::now();

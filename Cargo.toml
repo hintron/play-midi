@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
+ctrlc = "3.4.4"
 midir = "0.10.0"
 midly = "0.5.3"
 rusb = "0.9"
