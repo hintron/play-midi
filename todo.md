@@ -2,8 +2,6 @@
 
 ## Tasks
 * Support parallel songs (24.mid).
-* Account for how long it takes to play a note or send a command and compensate
-  for that when sleeping between commands.
 * Improve commandline arg infrastructure.
 * Send NOTE OFF commands for all notes on all channels before starting song,
   in case things were in a bad state.
@@ -32,4 +30,6 @@
     quiet.
 
 ## Completed
+* Account for how long it takes to play a note or send a command and compensate
+  for that when sleeping between commands.
 * Handle ctrl-C so that it sends NOTE OFF commands before exiting.
